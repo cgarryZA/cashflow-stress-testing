@@ -1,10 +1,10 @@
 # Cashflow Stress Testing Under Rate and Vacancy Shocks
 
-![DSCR gap surface](results/dscr_gap_surface__durham_typical.png)
-
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![Status](https://img.shields.io/badge/status-stable-green)
 ![Focus](https://img.shields.io/badge/focus-stress%20testing-informational)
+
+![DSCR gap surface](results/dscr_gap_surface__durham_typical.png)
 
 ## Research Question
 Where and how does a **levered UK rental cashflow** become infeasible under adverse:
@@ -133,7 +133,7 @@ python src/plots.py --preset durham_typical --base-rate 0.045
 ## Limitations
 - Occupancy is a single-year multiplier (doesn’t capture seasonality or re-letting frictions)
 - Opex is proportional to realised rent (no fixed annual costs). This implies at `occ=0` the model has `opex=0`, but **interest still accrues**, so cashflow remains negative.
-- Under this proportional-opex model, DSCR and net cashflow share the same break-even boundary.boundary
+- Under this proportional-opex model, DSCR and net cashflow share the same break-even boundary.
 - Interest shocks are parallel shifts (no term structure, no refinancing spreads)
 - One-year horizon only (no long-run dynamics)
 
