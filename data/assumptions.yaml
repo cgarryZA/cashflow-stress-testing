@@ -9,7 +9,6 @@ model_scope:
     under interest-rate and revenue interruption shocks.
     The objective is to identify failure regions and break-even
     conditions, not to forecast returns or prices.
-
   geography: UK
   asset_type: Residential rental property
   modelling_intent: Risk and robustness analysis only
@@ -20,124 +19,74 @@ model_scope:
 time:
   horizon_years: 1
   time_step: annual
-  rationale: >
-    Stress testing focuses on immediate and near-term solvency.
-    Long-horizon forecasting is intentionally excluded.
 
 # ------------------------------------------------------------
 # Base Cashflow Assumptions (Deterministic)
 # ------------------------------------------------------------
 base_cashflow:
-  gross_annual_rent: 1.0          # Normalised (actual value supplied at runtime)
+  gross_annual_rent: 1.0          # Normalised. Calibration handled via theta = rent/debt.
   operating_cost_ratio: 0.20      # Fraction of gross rent
-  net_operating_income:
-    formula: NOI = gross_annual_rent * (1 - operating_cost_ratio)
-
-  rationale: >
-    Operating costs are modelled as a stable fraction of rent.
-    Cost volatility is not the primary failure driver at this stage.
 
 # ------------------------------------------------------------
-# Financing Structure
+# Financing Structure (for stress-testing, not forecasting)
 # ------------------------------------------------------------
 financing:
-  loan_to_value: 0.75             # Baseline LTV
-  debt_balance: 1.0               # Normalised relative to rent
   interest_only: true
-  base_interest_rate: r0          # Supplied externally
-
-  rationale: >
-    Interest-only debt isolates interest-rate sensitivity.
-    Principal amortisation effects are excluded at this stage.
+  base_interest_rate_value: 0.05  # 5% base rate used for the stress grid (can override via CLI)
 
 # ------------------------------------------------------------
 # Interest Rate Stress Scenarios
 # ------------------------------------------------------------
 interest_rate_stress:
-  type: deterministic_grid
-  shocks_bp: [0, 50, 100, 200]
-
-  interpretation: >
-    Parallel upward shocks to the prevailing interest rate.
-    Rates are assumed to remain at the shocked level
-    for the duration of the stress horizon.
-
-  exclusions:
-    - Yield curve modelling
-    - Interest rate forecasting
-    - Mean reversion dynamics
+  type: deterministic_range
+  start_bp: 0
+  stop_bp: 300
+  step_bp: 25
 
 # ------------------------------------------------------------
-# Revenue Stress (Vacancy Regimes)
+# Revenue Stress (Vacancy / Occupancy Grid)
 # ------------------------------------------------------------
 revenue_stress:
-  type: regime_based
-  occupancy_multipliers:
-    full_occupancy: 1.0
-    mild_vacancy: 0.9
-    severe_vacancy: 0.8
-    full_vacancy: 0.0
-
-  rationale: >
-    Rental income risk is discrete and regime-driven.
-    Continuous noise models are inappropriate for vacancy risk.
+  type: deterministic_range
+  occupancy_range:
+    start: 0.4
+    stop: 1.00
+    step: 0.02
 
 # ------------------------------------------------------------
-# Cashflow Definition
+# Calibration Presets
 # ------------------------------------------------------------
-cashflow_definition:
-  net_cashflow:
-    formula: CF = revenue - operating_costs - interest_cost
+calibration:
+  # Choose which preset runs by default if you don't pass --preset on the CLI
+  default_preset: structural_normalised
 
-  interest_cost:
-    formula: interest_cost = interest_rate * debt_balance
+  # The model is governed by a single scalar:
+  #   theta = annual_rent / outstanding_debt
+  #
+  # Structural mode uses a pure ratio.
+  # Calibrated modes either provide theta directly OR provide yield/LTV
+  # or real rent/debt to compute theta.
 
-# ------------------------------------------------------------
-# Risk Metrics
-# ------------------------------------------------------------
-risk_metrics:
-  primary:
-    - DSCR
-    - net_cashflow
+  presets:
+    # 1) Structural / dimensionless: rent=1, debt=1 -> theta=1
+    structural_normalised:
+      description: "Pure structural run: rent=1, debt=1 (dimensionless)."
+      rent_to_debt_ratio: 1.0
+      occupancy_range_override:
+        start: 0.00
+        stop: 0.50
+        step: 0.02
 
-  DSCR:
-    formula: DSCR = (revenue - operating_costs) / interest_cost
-    threshold: 1.0
+    # 2) Transferable heuristic: gross yield / LTV
+    durham_typical:
+      description: "Typical Durham 'good deal' heuristic: ~10% gross yield, ~85% LTV."
+      gross_yield: 0.10
+      ltv: 0.85
+      # theta implied = gross_yield / ltv ~= 0.117647...
 
-  break_even_conditions:
-    definition: >
-      Break-even is defined as the stress point at which
-      DSCR equals 1.0 or net cashflow equals zero.
-
-# ------------------------------------------------------------
-# Explicit Exclusions
-# ------------------------------------------------------------
-exclusions:
-  - House price dynamics
-  - Rent growth forecasting
-  - Inflation modelling
-  - Tax considerations
-  - Capital appreciation
-  - Return optimisation
-  - Equity injections
-  - Behavioural assumptions
-
-# ------------------------------------------------------------
-# Interpretation Rules
-# ------------------------------------------------------------
-interpretation:
-  failure_definition: >
-    Any stress scenario where DSCR < 1.0 or net cashflow < 0
-    is considered infeasible without external capital support.
-
-  decision_use: >
-    Results are used to reject fragile leverage or properties,
-    not to select maximum return configurations.
-
-# ------------------------------------------------------------
-# Versioning
-# ------------------------------------------------------------
-version:
-  status: frozen
-  change_policy: >
-    Any modification requires a new version with written justification.
+    # 3) Worked example (frozen illustration — not tuned/fitted)
+    rightmove_example:
+      description: "Worked example calibration from a Durham listing (frozen inputs)."
+      annual_rent_gbp: 42500
+      mortgage_balance_gbp: 467500
+      # theta implied = annual_rent_gbp / mortgage_balance_gbp ~= 0.090909...
