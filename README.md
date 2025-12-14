@@ -4,9 +4,7 @@
 ![Status](https://img.shields.io/badge/status-stable-green)
 ![Focus](https://img.shields.io/badge/focus-stress%20testing-informational)
 
-<p align="center">
-  <img src="results/dscr_gap_surface__durham_typical.png" width="850">
-</p>
+![DSCR gap surface](results/dscr_gap_surface__durham_typical.png)
 
 ## Research Question
 Where and how does a **levered UK rental cashflow** become infeasible under adverse:
