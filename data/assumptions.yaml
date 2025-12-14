@@ -1,0 +1,143 @@
+# ============================================================
+# Project 1: Cashflow Stress Testing Under Rate & Vacancy Shocks
+# Assumptions File (Ex-Ante, Frozen)
+# ============================================================
+
+model_scope:
+  description: >
+    Deterministic stress testing of a levered rental cashflow
+    under interest-rate and revenue interruption shocks.
+    The objective is to identify failure regions and break-even
+    conditions, not to forecast returns or prices.
+
+  geography: UK
+  asset_type: Residential rental property
+  modelling_intent: Risk and robustness analysis only
+
+# ------------------------------------------------------------
+# Time Structure
+# ------------------------------------------------------------
+time:
+  horizon_years: 1
+  time_step: annual
+  rationale: >
+    Stress testing focuses on immediate and near-term solvency.
+    Long-horizon forecasting is intentionally excluded.
+
+# ------------------------------------------------------------
+# Base Cashflow Assumptions (Deterministic)
+# ------------------------------------------------------------
+base_cashflow:
+  gross_annual_rent: 1.0          # Normalised (actual value supplied at runtime)
+  operating_cost_ratio: 0.20      # Fraction of gross rent
+  net_operating_income:
+    formula: NOI = gross_annual_rent * (1 - operating_cost_ratio)
+
+  rationale: >
+    Operating costs are modelled as a stable fraction of rent.
+    Cost volatility is not the primary failure driver at this stage.
+
+# ------------------------------------------------------------
+# Financing Structure
+# ------------------------------------------------------------
+financing:
+  loan_to_value: 0.75             # Baseline LTV
+  debt_balance: 1.0               # Normalised relative to rent
+  interest_only: true
+  base_interest_rate: r0          # Supplied externally
+
+  rationale: >
+    Interest-only debt isolates interest-rate sensitivity.
+    Principal amortisation effects are excluded at this stage.
+
+# ------------------------------------------------------------
+# Interest Rate Stress Scenarios
+# ------------------------------------------------------------
+interest_rate_stress:
+  type: deterministic_grid
+  shocks_bp: [0, 50, 100, 200]
+
+  interpretation: >
+    Parallel upward shocks to the prevailing interest rate.
+    Rates are assumed to remain at the shocked level
+    for the duration of the stress horizon.
+
+  exclusions:
+    - Yield curve modelling
+    - Interest rate forecasting
+    - Mean reversion dynamics
+
+# ------------------------------------------------------------
+# Revenue Stress (Vacancy Regimes)
+# ------------------------------------------------------------
+revenue_stress:
+  type: regime_based
+  occupancy_multipliers:
+    full_occupancy: 1.0
+    mild_vacancy: 0.9
+    severe_vacancy: 0.8
+    full_vacancy: 0.0
+
+  rationale: >
+    Rental income risk is discrete and regime-driven.
+    Continuous noise models are inappropriate for vacancy risk.
+
+# ------------------------------------------------------------
+# Cashflow Definition
+# ------------------------------------------------------------
+cashflow_definition:
+  net_cashflow:
+    formula: CF = revenue - operating_costs - interest_cost
+
+  interest_cost:
+    formula: interest_cost = interest_rate * debt_balance
+
+# ------------------------------------------------------------
+# Risk Metrics
+# ------------------------------------------------------------
+risk_metrics:
+  primary:
+    - DSCR
+    - net_cashflow
+
+  DSCR:
+    formula: DSCR = (revenue - operating_costs) / interest_cost
+    threshold: 1.0
+
+  break_even_conditions:
+    definition: >
+      Break-even is defined as the stress point at which
+      DSCR equals 1.0 or net cashflow equals zero.
+
+# ------------------------------------------------------------
+# Explicit Exclusions
+# ------------------------------------------------------------
+exclusions:
+  - House price dynamics
+  - Rent growth forecasting
+  - Inflation modelling
+  - Tax considerations
+  - Capital appreciation
+  - Return optimisation
+  - Equity injections
+  - Behavioural assumptions
+
+# ------------------------------------------------------------
+# Interpretation Rules
+# ------------------------------------------------------------
+interpretation:
+  failure_definition: >
+    Any stress scenario where DSCR < 1.0 or net cashflow < 0
+    is considered infeasible without external capital support.
+
+  decision_use: >
+    Results are used to reject fragile leverage or properties,
+    not to select maximum return configurations.
+
+# ------------------------------------------------------------
+# Versioning
+# ------------------------------------------------------------
+version:
+  status: frozen
+  change_policy: >
+    Any modification requires a new version with written justification.
