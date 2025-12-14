@@ -1,5 +1,7 @@
 # Cashflow Stress Testing Under Rate and Vacancy Shocks
 
+![DSCR gap surface](results/dscr_gap_surface__durham_typical.png)
+
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![Status](https://img.shields.io/badge/status-stable-green)
 ![Focus](https://img.shields.io/badge/focus-stress%20testing-informational)
@@ -86,7 +88,7 @@ Running the scripts produces:
 
 Re-running the same preset overwrites its own files (by design). Different presets do **not** overwrite each other because filenames include the preset name.
 
-## Results (example)
+## Results
 Below are the two core figures for preset: `durham_typical`.
 
 **Distance to break-even (DSCR − 1) under rate × occupancy shocks**
